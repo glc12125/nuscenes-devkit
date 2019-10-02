@@ -9,7 +9,7 @@ import numpy as np
 from munkres import Munkres
 import matplotlib.pyplot as plt
 
-from nuscenes.eval.tracking.data_classes import TrackingBox
+from nuscenes.eval.tracking.data_classes import TrackingBox, TrackingMetricData
 
 
 class TrackingEvaluation(object):
@@ -61,32 +61,9 @@ class TrackingEvaluation(object):
 
         self.n_scenes = len(self.tracks_gt)
 
-        # Internal statistics.
-        self.recall = 0
-        self.precision = 0
-        self.total_cost = 0
-        self.tp = 0  # Number of true positives including ignored true positives!
-        self.n_tr = 0  # Number of tracker detections minus ignored tracker detections
-        self.n_trs = []  # Number of tracker detections minus ignored tracker detections PER SEQUENCE
-        self.n_gt = 0  # Number of ground truth detections minus ignored false negatives and true positives
-        self.n_igt = 0  # Number of ignored ground truth detections
-        self.n_gts = []  # Number of ground truth detections minus ignored FNs and TPs PER SEQUENCE
-        self.n_gt_trajectories = 0
-        self.n_gt_trajectories = 0
-        self.gt_trajectories = dict()
-        self.ign_trajectories = dict()
+        self.reset()
 
-        # Challenge metrics.
-        self.MOTA = 0
-        self.MOTP = 0
-        self.fp = 0  # Number of false positives
-        self.fn = 0  # Number of false negatives WITHOUT ignored false negatives
-        self.fragments = 0
-        self.id_switches = 0
-        self.MT = 0
-        self.ML = 0
-
-    def compute_all_metrics(self, class_name: str, suffix: str) -> None:
+    def compute_all_metrics(self, class_name: str, suffix: str) -> TrackingMetricData:
         """
         Compute all relevant metrics for the current class.
         :param class_name:
@@ -105,19 +82,15 @@ class TrackingEvaluation(object):
         for threshold in thresholds:
             # Compute metrics for current threshold.
             self.reset()
-            self.compute_third_party_metrics(threshold)
-            self.save_to_stats(dump, threshold)
+            metrics = self.compute_third_party_metrics(threshold)
+            self.save_to_stats(metrics, dump, threshold)
 
             # Update counters for average metrics.
-            data_tmp = dict()
-            data_tmp['mota'], data_tmp['motp'], data_tmp['precision'], data_tmp['fp'], data_tmp['fn'], \
-                data_tmp['recall'] = \
-                self.MOTA, self.MOTP, self.precision, self.fp, self.fn, self.recall
-            stat_meter.update(data_tmp)
+            stat_meter.update(metrics)
 
             # Store best MOTA threshold used for CLEARMOT metrics.
-            if self.MOTA > best_mota:
-                best_mota = self.MOTA
+            if metrics.MOTA > best_mota:
+                best_mota = metrics.MOTA
                 best_threshold = threshold
 
         # Use best threshold for CLEARMOT metrics.
@@ -133,6 +106,8 @@ class TrackingEvaluation(object):
         stat_meter.plot(save_dir=self.output_dir)
         dump.close()
 
+        return metrics
+
     def get_thresholds(self) -> List[float]:
         """
         Specify recall thresholds.
@@ -144,42 +119,38 @@ class TrackingEvaluation(object):
         return thresholds
 
     def reset(self) -> None:
-        self.n_gt = 0  # Number of ground truth detections minus ignored false negatives and true positives
-        self.n_igt = 0  # Number of ignored ground truth detections
-        self.n_tr = 0  # Number of tracker detections minus ignored tracker detections
-
-        self.MOTA = 0
-        self.MOTP = 0
-
+        # Internal statistics.
         self.recall = 0
         self.precision = 0
-
         self.total_cost = 0
-        self.tp = 0
-        self.fn = 0
-        self.fp = 0
+        self.tp = 0  # Number of true positives including ignored true positives.
+        self.n_tr = 0  # Number of tracker detections minus ignored tracker detections.
+        self.n_trs = []  # Number of tracker detections minus ignored tracker detections PER SEQUENCE.
+        self.n_gt = 0  # Number of ground truth detections minus ignored false negatives and true positives.
+        self.n_igt = 0  # Number of ignored ground truth detections.
+        self.n_gts = []  # Number of ground truth detections minus ignored FNs and TPs PER SEQUENCE.
+        self.n_gt_trajectories = 0
+        self.n_gt_trajectories = 0
+        self.gt_trajectories = dict()
+        self.ign_trajectories = dict()
 
-        self.n_gts = []  # Number of ground truth detections minus ignored false negatives and true positives PER SEQUENCE
-        self.n_trs = []  # Number of tracker detections minus ignored tracker detections PER SEQUENCE
-
+        # Challenge metrics.
+        self.MOTA = 0
+        self.MOTP = 0
+        self.fp = 0  # Number of false positives
+        self.fn = 0  # Number of false negatives WITHOUT ignored false negatives
         self.fragments = 0
         self.id_switches = 0
         self.MT = 0
         self.ML = 0
 
-        self.gt_trajectories = dict()
-        self.ign_trajectories = dict()
-
     def compute_third_party_metrics(self, threshold: float = None) -> None:
         """
         Computes the traditional CLEARMOT/MT/ML metrics.
         """
-        # Init.
-        self.gt_trajectories = dict()
-        self.ign_trajectories = dict()
-
         # Go through all frames and associate ground truth and tracker results.
         # Groundtruth and tracker contain lists for every single frame containing lists detections.
+        metrics = TrackingMetricData()
         for scene_id in self.tracks_gt.keys():
             # Retrieve GT and preds.
             scene_tracks_gt = self.tracks_gt[scene_id]
@@ -247,7 +218,9 @@ class TrackingEvaluation(object):
         self.n_gt_trajectories = sum([len(t) for t in self.gt_trajectories.values()])
 
         # Compute the relevant metrics.
-        self._compute_metrics()
+        metrics = self._compute_metrics(metrics)
+
+        return metrics
 
     def create_summary_details(self) -> str:
         """
@@ -314,7 +287,7 @@ class TrackingEvaluation(object):
             s_out += ('%s' % val).rjust(width[1])
         return s_out
 
-    def save_to_stats(self, dump, threshold: float = None, is_best: bool = False) -> None:
+    def save_to_stats(self, metrics, dump, threshold: float = None, is_best: bool = False) -> None:
         """
         Save the statistics in a whitespace separate file.
         """
@@ -385,7 +358,7 @@ class TrackingEvaluation(object):
 
         return association_matrix, cost_matrix
 
-    def _compute_metrics(self) -> None:
+    def _compute_metrics(self) -> TrackingMetricData:
         """
         Compute MT/PT/ML, fragments and idswitches for all GT trajectories.
         """

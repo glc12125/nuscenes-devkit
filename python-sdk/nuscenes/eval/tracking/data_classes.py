@@ -83,6 +83,12 @@ class TrackingMetricData(MetricData):
                  recall: np.array,
                  precision: np.array,
                  confidence: np.array):
+        """
+        TODO
+        :param recall:
+        :param precision:
+        :param confidence:
+        """
 
         # Assert lengths.
         assert len(recall) == self.nelem

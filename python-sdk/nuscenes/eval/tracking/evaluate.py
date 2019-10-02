@@ -25,9 +25,6 @@ class TrackingEval:
     This is the official nuScenes tracking evaluation code.
     Results are written to the provided output_dir.
 
-    nuScenes uses the following tracking metrics:
-    TODO
-
     Here is an overview of the functions in this method:
     - init: Loads GT annotations and predictions stored in JSON format and filters the boxes.
     - run: Performs evaluation and dumps the metric data to disk.
@@ -106,14 +103,15 @@ class TrackingEval:
         """
         start_time = time.time()
         metrics = TrackingMetrics(self.cfg)
-        metric_data_list = MetricDataList() # TODO: Do we still need this?
+        metric_data_list = MetricDataList()
 
         suffix = self.cfg.dist_fcn.title().lower()
         for class_name in self.cfg.class_names:
             ev = TrackingEvaluation(self.tracks_gt, self.tracks_pred, class_name, self.cfg.dist_fcn_callable,
                                     self.cfg.dist_th_tp, num_thresholds=TrackingMetricData.nelem,
                                     output_dir=self.output_dir)
-            ev.compute_all_metrics(class_name, suffix)
+            md = ev.compute_all_metrics(class_name, suffix)
+            metric_data_list.set(class_name, self.cfg.dist_th_tp, md)
 
         # Compute evaluation time.
         metrics.add_runtime(time.time() - start_time)
