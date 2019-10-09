@@ -310,25 +310,25 @@ class RadarPointCloud(PointCloud):
 
         invalid_state: state of Cluster validity state.
         (Invalid states)
-        0x01	invalid due to low RCS
-        0x02	invalid due to near-field artefact
-        0x03	invalid far range cluster because not confirmed in near range
-        0x05	reserved
-        0x06	invalid cluster due to high mirror probability
-        0x07	Invalid cluster because outside sensor field of view
-        0x0d	reserved
-        0x0e	invalid cluster because it is a harmonics
+        0x01    invalid due to low RCS
+        0x02    invalid due to near-field artefact
+        0x03    invalid far range cluster because not confirmed in near range
+        0x05    reserved
+        0x06    invalid cluster due to high mirror probability
+        0x07    Invalid cluster because outside sensor field of view
+        0x0d    reserved
+        0x0e    invalid cluster because it is a harmonics
         (Valid states)
-        0x00	valid
-        0x04	valid cluster with low RCS
-        0x08	valid cluster with azimuth correction due to elevation
-        0x09	valid cluster with high child probability
-        0x0a	valid cluster with high probability of being a 50 deg artefact
-        0x0b	valid cluster but no local maximum
-        0x0c	valid cluster with high artefact probability
-        0x0f	valid cluster with above 95m in near range
-        0x10	valid cluster with high multi-target probability
-        0x11	valid cluster with suspicious angle
+        0x00    valid
+        0x04    valid cluster with low RCS
+        0x08    valid cluster with azimuth correction due to elevation
+        0x09    valid cluster with high child probability
+        0x0a    valid cluster with high probability of being a 50 deg artefact
+        0x0b    valid cluster but no local maximum
+        0x0c    valid cluster with high artefact probability
+        0x0f    valid cluster with above 95m in near range
+        0x10    valid cluster with high multi-target probability
+        0x11    valid cluster with suspicious angle
 
         dynProp: Dynamic property of cluster to indicate if is moving or not.
         0: moving
@@ -404,6 +404,7 @@ class RadarPointCloud(PointCloud):
                 point_p = struct.unpack(types_str[p], data_binary[start_p:end_p])[0]
                 point.append(point_p)
                 offset = end_p
+            print("point {}: {}".format(i, point))
             points.append(point)
 
         # A NaN in the first point indicates an empty pointcloud.

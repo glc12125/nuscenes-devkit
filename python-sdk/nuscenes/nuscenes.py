@@ -551,6 +551,7 @@ class NuScenesExplorer:
             pc = LidarPointCloud.from_file(pcl_path)
         else:
             pc = RadarPointCloud.from_file(pcl_path)
+        print("pc.points: {}".format(pc.points))
         im = Image.open(osp.join(self.nusc.dataroot, cam['filename']))
 
         # Points live in the point sensor frame. So they need to be transformed via global to the image plane.
@@ -632,6 +633,7 @@ class NuScenesExplorer:
 
         points, coloring, im = self.map_pointcloud_to_image(pointsensor_token, camera_token,
                                                             render_intensity=render_intensity)
+        print("points in render_pointcloud_in_image: {}".format(points))
         plt.figure(figsize=(9, 16))
         plt.imshow(im)
         plt.scatter(points[0, :], points[1, :], c=coloring, s=dot_size)
