@@ -404,7 +404,7 @@ class RadarPointCloud(PointCloud):
                 point_p = struct.unpack(types_str[p], data_binary[start_p:end_p])[0]
                 point.append(point_p)
                 offset = end_p
-            print("point {}: {}".format(i, point))
+            #print("point {}: {}".format(i, point))
             points.append(point)
 
         # A NaN in the first point indicates an empty pointcloud.

@@ -690,6 +690,7 @@ class NuScenesExplorer:
         fig.subplots_adjust(wspace=0, hspace=0)
         if out_path is not None:
             plt.savefig(out_path)
+        plt.show()
 
     def render_ego_centric_map(self,
                                sample_data_token: str,
